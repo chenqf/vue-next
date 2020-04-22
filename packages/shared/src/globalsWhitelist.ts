@@ -1,3 +1,4 @@
+//全局白名单
 export const globalsWhitelist = new Set(
   (
     'Infinity,undefined,NaN,isFinite,isNaN,parseFloat,parseInt,decodeURI,' +

@@ -15,9 +15,11 @@
 
 export const enum PatchFlags {
   // Indicates an element with dynamic textContent (children fast path)
+  //表示具有动态textContent的元素
   TEXT = 1,
 
   // Indicates an element with dynamic class binding.
+  // 动态的class绑定
   CLASS = 1 << 1,
 
   // Indicates an element with dynamic style

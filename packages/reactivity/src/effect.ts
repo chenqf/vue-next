@@ -35,6 +35,11 @@ export const activeReactiveEffectStack: ReactiveEffect[] = []
 
 export const ITERATE_KEY = Symbol('iterate')
 
+/**
+ * 用于监听响应式数据的变化
+ * @param fn 
+ * @param options 
+ */
 export function effect(
   fn: Function,
   options: ReactiveEffectOptions = EMPTY_OBJ

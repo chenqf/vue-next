@@ -10,6 +10,7 @@ export const NOOP = () => {}
 
 export const isOn = (key: string) => key[0] === 'o' && key[1] === 'n'
 
+// ts 泛型约束
 export const extend = <T extends object, U extends object>(
   a: T,
   b: U
@@ -35,6 +36,11 @@ export const isObject = (val: any): val is Record<any, any> =>
   val !== null && typeof val === 'object'
 
 export const objectToString = Object.prototype.toString
+
+/**
+ * Object.prototype.toString.call(value) 别名
+ * @param value 
+ */
 export const toTypeString = (value: unknown): string =>
   objectToString.call(value)
 
@@ -42,19 +48,30 @@ export const isPlainObject = (val: any): val is object =>
   toTypeString(val) === '[object Object]'
 
 const vnodeHooksRE = /^vnode/
+// Reserved 保留的
 export const isReservedProp = (key: string): boolean =>
   key === 'key' || key === 'ref' || vnodeHooksRE.test(key)
 
+/**
+ * 连字符-->驼峰
+ */
 const camelizeRE = /-(\w)/g
 export const camelize = (str: string): string => {
   return str.replace(camelizeRE, (_, c) => (c ? c.toUpperCase() : ''))
 }
 
+/**
+ * 驼峰-->连字符
+ */
 const hyphenateRE = /\B([A-Z])/g
 export const hyphenate = (str: string): string => {
   return str.replace(hyphenateRE, '-$1').toLowerCase()
 }
 
+/**
+ * 首字母大写
+ * @param str 
+ */
 export const capitalize = (str: string): string => {
   return str.charAt(0).toUpperCase() + str.slice(1)
 }

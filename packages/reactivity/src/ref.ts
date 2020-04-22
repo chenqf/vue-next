@@ -15,6 +15,10 @@ export type UnwrapNestedRefs<T> = T extends Ref<any> ? T : UnwrapRef<T>
 
 const convert = (val: any): any => (isObject(val) ? reactive(val) : val)
 
+/**
+ * 实现非对象数据的劫持
+ * @param raw 
+ */
 export function ref<T>(raw: T): Ref<T> {
   raw = convert(raw)
   const v = {
@@ -35,6 +39,10 @@ export function isRef(v: any): v is Ref<any> {
   return v ? v._isRef === refSymbol : false
 }
 
+/**
+ * 将对象的第一层转化为Ref类型
+ * @param object 
+ */
 export function toRefs<T extends object>(
   object: T
 ): { [K in keyof T]: Ref<T[K]> } {

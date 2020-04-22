@@ -123,6 +123,12 @@ export function isReadonly(value: any): boolean {
   return readonlyToRaw.has(value)
 }
 
+/**
+ * 通过响应数据获取原始数据
+ * 
+ * @param observed 
+ * @result original
+ */
 export function toRaw<T>(observed: T): T {
   return reactiveToRaw.get(observed) || readonlyToRaw.get(observed) || observed
 }
@@ -132,6 +138,10 @@ export function markReadonly<T>(value: T): T {
   return value
 }
 
+/**
+ * 使value不生成响应数据
+ * @param value 
+ */
 export function markNonReactive<T>(value: T): T {
   nonReactiveValues.add(value)
   return value
