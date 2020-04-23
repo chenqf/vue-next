@@ -54,6 +54,10 @@ export function effect(
   return effect
 }
 
+/**
+ * 
+ * @param effect 停止监听
+ */
 export function stop(effect: ReactiveEffect) {
   if (effect.active) {
     cleanup(effect)
