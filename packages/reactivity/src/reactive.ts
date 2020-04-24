@@ -10,7 +10,7 @@ import {
 } from './baseHandlers'
 
 import {
-  mutableCollectionHandlers, // 可变集合数据代理处理
+  mutableCollectionHandlers, // 可变数据的代理劫持方法
   readonlyCollectionHandlers // 只读集合数据代理处理
 } from './collectionHandlers'
 
@@ -47,7 +47,9 @@ const observableValueRE = /^\[object (?:Object|Array|Map|Set|WeakMap|WeakSet)\]$
 
 
 
-// 是否可观察
+/**
+ * 是否可观察
+ */
 const canObserve = (value: any): boolean => {
   return (
     !value._isVue &&
@@ -90,22 +92,30 @@ export function markNonReactive<T>(value: T): T {
     return value
 }
 
+
+
 export function reactive<T extends object>(target: T): UnwrapNestedRefs<T>
 export function reactive(target: object) {
   // if trying to observe a readonly proxy, return the readonly version.
+  // 如果传递的是只读响应式数据,则直接返回
   if (readonlyToRaw.has(target)) {
     return target
   }
   // target is explicitly marked as readonly by user
+  // 如果被用户标记为只读数据,通过readonly去封装
   if (readonlyValues.has(target)) {
     return readonly(target)
   }
+
+  // 保证了target 为非只读数据
+
+  //创建reactive对象
   return createReactiveObject(
     target,
-    rawToReactive,
-    reactiveToRaw,
-    mutableHandlers,
-    mutableCollectionHandlers
+    rawToReactive, // 原始数据 -> 响应式数据映射
+    reactiveToRaw, // 响应式数据 -> 原始数据映射
+    mutableHandlers, // 可变数据的代理劫持方法
+    mutableCollectionHandlers // 可变集合数据的代理劫持方法
   )
 }
 
@@ -115,9 +125,11 @@ export function readonly<T extends object>(
 export function readonly(target: object) {
   // value is a mutable observable, retrieve its original and return
   // a readonly version.
+  // 若为响应数据,获取相应数据的原始值
   if (reactiveToRaw.has(target)) {
     target = reactiveToRaw.get(target)
   }
+
   return createReactiveObject(
     target,
     rawToReadonly,
@@ -126,6 +138,8 @@ export function readonly(target: object) {
     readonlyCollectionHandlers
   )
 }
+
+
 
 function createReactiveObject(
   target: any,
@@ -140,22 +154,25 @@ function createReactiveObject(
     }
     return target
   }
-  // target already has corresponding Proxy
+  // 通过 原始数据->响应数据的映射,获取响应数据
   let observed = toProxy.get(target)
+  //如果存在响应数据,直接返回
   if (observed !== void 0) {
     return observed
   }
-  // target is already a Proxy
+  // 若传入的是响应数据,直接返回响应数据
   if (toRaw.has(target)) {
     return target
   }
-  // only a whitelist of value types can be observed.
+  // 传入数据不是一个可观察的对象,直接返回数据
   if (!canObserve(target)) {
     return target
   }
+
   const handlers = collectionTypes.has(target.constructor)
     ? collectionHandlers
     : baseHandlers
+    
   observed = new Proxy(target, handlers)
   toProxy.set(target, observed)
   toRaw.set(observed, target)
