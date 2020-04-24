@@ -3,16 +3,30 @@ import { OperationTypes } from './operations'
 import { isObject } from '@vue/shared'
 import { reactive } from './reactive'
 
+//生成唯一key
 export const refSymbol = Symbol()
 export type RefSymbol = typeof refSymbol
 
+//声明Ref接口
 export interface Ref<T> {
+  //用于判断是否为Ref
   _isRef: RefSymbol
+  //存放真正数据的地方
   value: UnwrapNestedRefs<T>
 }
 
 export type UnwrapNestedRefs<T> = T extends Ref<any> ? T : UnwrapRef<T>
 
+//判断是否是Ref
+export function isRef(v: any): v is Ref<any> {
+    return v ? v._isRef === refSymbol : false
+}
+
+/**
+ * 对象转换为reactive
+ * 普通数据直接返回
+ * @param val 
+ */
 const convert = (val: any): any => (isObject(val) ? reactive(val) : val)
 
 /**
@@ -24,20 +38,21 @@ export function ref<T>(raw: T): Ref<T> {
   const v = {
     _isRef: refSymbol,
     get value() {
+      // 收集依赖
       track(v, OperationTypes.GET, '')
+      // 返回转化后的数据
       return raw
     },
     set value(newVal) {
       raw = convert(newVal)
+      // 触发监听执行
       trigger(v, OperationTypes.SET, '')
     }
   }
   return v as Ref<T>
 }
 
-export function isRef(v: any): v is Ref<any> {
-  return v ? v._isRef === refSymbol : false
-}
+
 
 /**
  * 将对象的第一层转化为Ref类型
@@ -47,6 +62,7 @@ export function toRefs<T extends object>(
   object: T
 ): { [K in keyof T]: Ref<T[K]> } {
   const ret: any = {}
+  //遍历所有key,将其值转化为Ref数据
   for (const key in object) {
     ret[key] = toProxyRef(object, key)
   }
@@ -60,15 +76,18 @@ function toProxyRef<T extends object, K extends keyof T>(
   const v = {
     _isRef: refSymbol,
     get value() {
+      // 注意，这里没用到track
       return object[key]
     },
     set value(newVal) {
+      // 注意，这里没用到trigger
       object[key] = newVal
     }
   }
   return v as Ref<T[K]>
 }
 
+//不应该继续递归的引用数据类型
 type BailTypes =
   | Function
   | Map<any, any>
@@ -79,6 +98,8 @@ type BailTypes =
 // Recursively unwraps nested value bindings.
 // Unfortunately TS cannot do recursive types, but this should be enough for
 // practical use cases...
+
+//递归地获取嵌套数据的类型
 export type UnwrapRef<T> = T extends Ref<infer V>
   ? UnwrapRef2<V>
   : T extends Array<infer V>

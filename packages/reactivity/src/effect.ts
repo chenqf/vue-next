@@ -122,6 +122,7 @@ export function resumeTracking() {
   shouldTrack = true
 }
 
+// 收集依赖
 export function track(
   target: any,
   type: OperationTypes,
@@ -158,6 +159,7 @@ export function track(
   }
 }
 
+//触发监听函数
 export function trigger(
   target: any,
   type: OperationTypes,

@@ -63,10 +63,10 @@ describe('reactivity/computed', () => {
   it('should trigger effect when chained', () => {
     const value = reactive({ foo: 0 })
     const getter1 = jest.fn(() => value.foo)
-    const getter2 = jest.fn(() => {
-      return c1.value + 1
-    })
     const c1 = computed(getter1)
+    const getter2 = jest.fn(() => {
+        return c1.value + 1
+      })
     const c2 = computed(getter2)
 
     let dummy
