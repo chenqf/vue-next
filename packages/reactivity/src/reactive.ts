@@ -5,13 +5,13 @@ import {
 
 // 此处的handles最终会传递给Proxy(target, handle)的第二个参数
 import { 
-    mutableHandlers, // 可变数据代理处理
-    readonlyHandlers  // 只读(不可变)数据代理处理
+    mutableHandlers, // 可变(object/array)的代理劫持方法
+    readonlyHandlers  // 只读(object/array)的代理劫持方法
 } from './baseHandlers'
 
 import {
-  mutableCollectionHandlers, // 可变数据的代理劫持方法
-  readonlyCollectionHandlers // 只读集合数据代理处理
+  mutableCollectionHandlers, // 可变(map,set,weakMap,weakSet)的代理劫持方法
+  readonlyCollectionHandlers // 只读(map,set,weakMap,weakSet)的代理劫持方法
 } from './collectionHandlers'
 
 import { UnwrapNestedRefs } from './ref'
@@ -29,15 +29,24 @@ export type KeyToDepMap = Map<string | symbol, Dep>
 export const targetMap: WeakMap<any, KeyToDepMap> = new WeakMap()
 
 // WeakMaps that store {raw <-> observed} pairs.
+
+//原始数据->响应数据 映射表
 const rawToReactive: WeakMap<any, any> = new WeakMap()
+//响应数据->原始数据 映射表
 const reactiveToRaw: WeakMap<any, any> = new WeakMap()
 
+//原始数据->只读响应数据 映射表
 const rawToReadonly: WeakMap<any, any> = new WeakMap()
+//只读响应数据->原始数据 映射表
 const readonlyToRaw: WeakMap<any, any> = new WeakMap()
 
 // WeakSets for values that are marked readonly or non-reactive during
 // observable creation.
+
+//只读数据集合
 const readonlyValues: WeakSet<any> = new WeakSet()
+
+//非响应数据集合(存放的原始数据)
 const nonReactiveValues: WeakSet<any> = new WeakSet()
 
 //集合类型
@@ -48,11 +57,11 @@ const observableValueRE = /^\[object (?:Object|Array|Map|Set|WeakMap|WeakSet)\]$
 
 
 /**
- * 是否可观察
+ * 入参是否可被观察
  */
 const canObserve = (value: any): boolean => {
   return (
-    !value._isVue &&
+    !value._isVue && // TODO 未知 _isVue
     !value._isVNode && // 虚拟DOM的节点不可观察
     observableValueRE.test(toTypeString(value)) && // 可观察的对象
     !nonReactiveValues.has(value) // 是否为指定的不可观察对象
@@ -78,6 +87,7 @@ export function toRaw<T>(observed: T): T {
 
 /**
  * 传递数据，将其添加到只读数据集合中
+ * 添加的是原始数据
  */
 export function markReadonly<T>(value: T): T {
     readonlyValues.add(value)
@@ -86,6 +96,7 @@ export function markReadonly<T>(value: T): T {
 
 /**
  * 传递数据，将其添加至不可响应数据集合中
+ * 添加的是原始数据
  */
 export function markNonReactive<T>(value: T): T {
     nonReactiveValues.add(value)
@@ -125,6 +136,7 @@ export function readonly<T extends object>(
 export function readonly(target: object) {
   // value is a mutable observable, retrieve its original and return
   // a readonly version.
+
   // 若为响应数据,获取相应数据的原始值
   if (reactiveToRaw.has(target)) {
     target = reactiveToRaw.get(target)
@@ -148,6 +160,7 @@ function createReactiveObject(
   baseHandlers: ProxyHandler<any>,
   collectionHandlers: ProxyHandler<any>
 ) {
+  // 不是对象,开发环境提示错误
   if (!isObject(target)) {
     if (__DEV__) {
       console.warn(`value cannot be made reactive: ${String(target)}`)
@@ -169,16 +182,22 @@ function createReactiveObject(
     return target
   }
 
+  // 区分 集合数据 和 (object/array) 两种数据的代理方式的不同
   const handlers = collectionTypes.has(target.constructor)
     ? collectionHandlers
     : baseHandlers
-    
+  // 声明一个代理对象,即是响应对象
   observed = new Proxy(target, handlers)
+  // 设置 原始数据->响应数据 关联关系
   toProxy.set(target, observed)
+  // 设置 响应数据->原始数据 关联关系
   toRaw.set(observed, target)
+
+  // 将原始数据存放设至 targetMap ,但为什么要存放,存放的value是什么,并不确定
   if (!targetMap.has(target)) {
     targetMap.set(target, new Map())
   }
+  //返回响应数据
   return observed
 }
 
