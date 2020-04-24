@@ -56,6 +56,8 @@ export function ref<T>(raw: T): Ref<T> {
 
 /**
  * 将对象的第一层转化为Ref类型
+ * 需要注意的是,传入的必须是reactive对象
+ * 传入普通对象是没有响应式效果的
  * @param object 
  */
 export function toRefs<T extends object>(
