@@ -1,12 +1,22 @@
-import { isObject, toTypeString } from '@vue/shared'
-import { mutableHandlers, readonlyHandlers } from './baseHandlers'
+import { 
+    isObject, //判断是否为对象
+    toTypeString //获取数据的类型名称
+} from '@vue/shared'
+
+// 此处的handles最终会传递给Proxy(target, handle)的第二个参数
+import { 
+    mutableHandlers, // 可变数据代理处理
+    readonlyHandlers  // 只读(不可变)数据代理处理
+} from './baseHandlers'
 
 import {
-  mutableCollectionHandlers,
-  readonlyCollectionHandlers
+  mutableCollectionHandlers, // 可变集合数据代理处理
+  readonlyCollectionHandlers // 只读集合数据代理处理
 } from './collectionHandlers'
 
 import { UnwrapNestedRefs } from './ref'
+
+// effect执行后返回的监听函数的类型
 import { ReactiveEffect } from './effect'
 
 // The main WeakMap that stores {target -> key -> dep} connections.
@@ -15,11 +25,13 @@ import { ReactiveEffect } from './effect'
 // raw Sets to reduce memory overhead.
 export type Dep = Set<ReactiveEffect>
 export type KeyToDepMap = Map<string | symbol, Dep>
+// 利用WeakMap是为了更好的减少内存开销
 export const targetMap: WeakMap<any, KeyToDepMap> = new WeakMap()
 
 // WeakMaps that store {raw <-> observed} pairs.
 const rawToReactive: WeakMap<any, any> = new WeakMap()
 const reactiveToRaw: WeakMap<any, any> = new WeakMap()
+
 const rawToReadonly: WeakMap<any, any> = new WeakMap()
 const readonlyToRaw: WeakMap<any, any> = new WeakMap()
 
@@ -28,16 +40,54 @@ const readonlyToRaw: WeakMap<any, any> = new WeakMap()
 const readonlyValues: WeakSet<any> = new WeakSet()
 const nonReactiveValues: WeakSet<any> = new WeakSet()
 
+//集合类型
 const collectionTypes: Set<any> = new Set([Set, Map, WeakMap, WeakSet])
+//用于正则判断是否符合可观察数据 [object ...]
 const observableValueRE = /^\[object (?:Object|Array|Map|Set|WeakMap|WeakSet)\]$/
 
+
+
+// 是否可观察
 const canObserve = (value: any): boolean => {
   return (
     !value._isVue &&
-    !value._isVNode &&
-    observableValueRE.test(toTypeString(value)) &&
-    !nonReactiveValues.has(value)
+    !value._isVNode && // 虚拟DOM的节点不可观察
+    observableValueRE.test(toTypeString(value)) && // 可观察的对象
+    !nonReactiveValues.has(value) // 是否为指定的不可观察对象
   )
+}
+
+// 是否是响应式数据
+export function isReactive(value: any): boolean {
+    return reactiveToRaw.has(value) || readonlyToRaw.has(value)
+}
+
+// 是否是只读的响应式诗句
+export function isReadonly(value: any): boolean {
+    return readonlyToRaw.has(value)
+}
+
+/**
+ * 通过响应数据获取原始数据
+ */
+export function toRaw<T>(observed: T): T {
+    return reactiveToRaw.get(observed) || readonlyToRaw.get(observed) || observed
+}
+
+/**
+ * 传递数据，将其添加到只读数据集合中
+ */
+export function markReadonly<T>(value: T): T {
+    readonlyValues.add(value)
+    return value
+}
+
+/**
+ * 传递数据，将其添加至不可响应数据集合中
+ */
+export function markNonReactive<T>(value: T): T {
+    nonReactiveValues.add(value)
+    return value
 }
 
 export function reactive<T extends object>(target: T): UnwrapNestedRefs<T>
@@ -115,34 +165,4 @@ function createReactiveObject(
   return observed
 }
 
-export function isReactive(value: any): boolean {
-  return reactiveToRaw.has(value) || readonlyToRaw.has(value)
-}
 
-export function isReadonly(value: any): boolean {
-  return readonlyToRaw.has(value)
-}
-
-/**
- * 通过响应数据获取原始数据
- * 
- * @param observed 
- * @result original
- */
-export function toRaw<T>(observed: T): T {
-  return reactiveToRaw.get(observed) || readonlyToRaw.get(observed) || observed
-}
-
-export function markReadonly<T>(value: T): T {
-  readonlyValues.add(value)
-  return value
-}
-
-/**
- * 使value不生成响应数据
- * @param value 
- */
-export function markNonReactive<T>(value: T): T {
-  nonReactiveValues.add(value)
-  return value
-}
