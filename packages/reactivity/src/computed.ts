@@ -1,4 +1,4 @@
-import { effect, ReactiveEffect, activeReactiveEffectStack } from './effect'
+import { effect, ReactiveEffect, effectStack } from './effect'
 import { Ref, refSymbol, UnwrapNestedRefs } from './ref'
 import { isFunction } from '@vue/shared'
 
@@ -67,7 +67,7 @@ export function computed<T>(
 
 function trackChildRun(childRunner: ReactiveEffect) {
   const parentRunner =
-    activeReactiveEffectStack[activeReactiveEffectStack.length - 1]
+  effectStack[effectStack.length - 1]
   if (parentRunner) {
     for (let i = 0; i < childRunner.deps.length; i++) {
       const dep = childRunner.deps[i]

@@ -4,7 +4,9 @@ import { OperationTypes } from './operations'
 import { LOCKED } from './lock'
 import { isObject, capitalize, hasOwn } from '@vue/shared'
 
+//将数据转化为reactive数据
 const toReactive = (value: any) => (isObject(value) ? reactive(value) : value)
+//将数据转化为只读的reactive数据
 const toReadonly = (value: any) => (isObject(value) ? readonly(value) : value)
 
 function get(target: any, key: any, wrap: (t: any) => any): any {

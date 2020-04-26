@@ -173,7 +173,7 @@ function createReactiveObject(
   if (observed !== void 0) {
     return observed
   }
-  // 若传入的是响应数据,直接返回响应数据
+  // 若传入的原始数据存在响应数据,直接返回响应数据
   if (toRaw.has(target)) {
     return target
   }
